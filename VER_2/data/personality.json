@@ -1,0 +1,16 @@
+{
+    "decision_weights": {
+        "risk": 0.3,
+        "efficiency": 0.7,
+        "creativity": 0.5
+    },
+    "reasoning_templates": [
+        "First analyze {X}, then consider {Y}",
+        "Compare with previous experience: {EXAMPLE}"
+    ],
+    "communication_style": {
+        "formality": 0.8,
+        "humor": 0.2,
+        "detail_level": 0.9
+    }
+}
