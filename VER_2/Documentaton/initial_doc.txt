@@ -1,0 +1,197 @@
+# XR5T - Second Brain AI Assistant Documentation
+**Version**: 1.0 (Alpha)
+**Last Updated**: [DATE]
+
+## Table of Contents
+1. [Project Overview](#1-project-overview)
+2. [System Architecture](#2-system-architecture)
+3. [Installation Guide](#3-installation-guide)
+4. [Component Documentation](#4-component-documentation)
+5. [Usage Examples](#5-usage-examples)
+6. [API Reference](#6-api-reference)
+7. [Customization Guide](#7-customization-guide)
+8. [Future Roadmap](#8-future-roadmap)
+9. [Troubleshooting](#9-troubleshooting)
+
+---
+
+## 1. Project Overview
+XR5T is a personalized AI assistant designed to mirror human thought patterns while leveraging machine learning capabilities. It combines:
+
+- **Personalized Reasoning**: Mimics user-specific decision-making processes
+- **Continual Learning**: Automatically stores and recalls information
+- **Natural Interaction**: Rich terminal interface with cognitive feedback
+- **Safe Code Generation**: Restricted Python code execution environment
+
+**Key Features**:
+✅ Context-aware memory system
+✅ Personality profile integration
+✅ Progress visualization with Rich
+✅ Basic self-modification capabilities
+✅ Secure code execution sandbox
+
+---
+
+## 2. System Architecture
+```mermaid
+graph TD
+    A[User Interface] --> B(Core System)
+    B --> C{Processing Pipeline}
+    C --> D[Memory System]
+    C --> E[Personality Engine]
+    C --> F[Code Generator]
+    D --> G[Vector Database]
+    E --> H[Decision Patterns]
+    F --> I[Sandbox Environment]
+```
+
+---
+
+## 3. Installation Guide
+### Requirements
+- Python 3.9+
+- 4GB RAM minimum
+- 500MB disk space
+
+### Setup
+1. Clone repository:
+```bash
+git clone [your-repo-url] && cd Project_XR5T/VER_2
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Initialize personality profile:
+```bash
+mkdir -p data && cp data/personality.json.example data/personality.json
+```
+
+---
+
+## 4. Component Documentation
+### 4.1 Memory System (`core/model/memory_system.py`)
+**Purpose**: Long-term knowledge storage/retrieval
+**Key Methods**:
+- `store(text, metadata)` - Save information with semantic embedding
+- `recall(query, top_k=3)` - Retrieve relevant memories
+
+**Technical Specs**:
+- Uses `all-MiniLM-L6-v2` sentence transformer
+- 384-dimensional vector embeddings
+- Cosine similarity search
+
+### 4.2 Cognitive Model (`core/model/cognitive_model.py`)
+**Personality Drivers**:
+```python
+{
+    "learning_strategy": {
+        "preferred_style": "structured spiral learning",
+        "resources": ["technical docs", "video tutorials"],
+        "pace": "sprint-based"
+    }
+}
+```
+
+**Decision Process**:
+1. Pattern recognition
+2. Historical context matching
+3. Resource prioritization
+
+### 4.3 User Interface (`interface/ghost_interface.py`)
+**Features**:
+- Real-time processing visualization
+- Adaptive response formatting
+- Session history tracking
+
+---
+
+## 5. Usage Examples
+### Basic Interaction
+```python
+>> How should I approach learning TypeScript?
+```
+**Output**:
+```
+Recommended approach: structured spiral learning
+Resources: technical docs, video tutorials
+Pacing: sprint-based with reflection periods
+```
+
+### Code Generation
+```python
+>> #generate Calculate fibonacci sequence up to N
+```
+**Output**:
+```python
+def fibonacci(n):
+    a, b = 0, 1
+    sequence = []
+    while a < n:
+        sequence.append(a)
+        a, b = b, a+b
+    return sequence
+```
+
+---
+
+## 6. API Reference
+### Core Classes
+| Class | Purpose | Key Methods |
+|-------|---------|-------------|
+| `XR5T` | Main controller | `process(query)` |
+| `VectorMemory` | Knowledge storage | `store()`, `recall()` |
+| `CognitiveModel` | Personality engine | `analyze()` |
+
+---
+
+## 7. Customization Guide
+### Modify Personality Profile
+Edit `data/personality.json`:
+```json
+"learning_strategy": {
+    "preferred_style": "project-based learning",
+    "resources": ["interactive tutorials", "code katas"],
+    "pace": "marathon-style"
+}
+```
+
+### Add Base Knowledge
+Edit `_prime_memory()` in `xr5t_system.py`:
+```python
+base_knowledge = [
+    ("New principle: Test-driven development first", {"type": "methodology"}),
+    ("Preferred architecture: Microservices", {"type": "design"})
+]
+```
+
+---
+
+## 8. Future Roadmap
+### Q3 2024
+- [ ] Voice interface integration
+- [ ] Cross-device sync capability
+- [ ] Automated task execution
+
+### Q4 2024
+- [ ] Emotion recognition module
+- [ ] Multi-modal input support
+- [ ] Distributed knowledge sharing
+
+---
+
+## 9. Troubleshooting
+**Common Issues**:
+1. **Import Errors**:
+   - Run `export PYTHONPATH="$PWD"` before execution
+   - Verify all `__init__.py` files exist
+
+2. **Memory Not Persisting**:
+   - Check write permissions for `data/memory_cache`
+   - Verify numpy version >=1.24.0
+
+3. **Slow Responses**:
+   - Reduce vector dimensions in `memory_system.py`
+   - Limit recall results with `top_k` parameter

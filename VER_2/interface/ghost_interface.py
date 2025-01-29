@@ -19,11 +19,14 @@ class GhostInterface:
 
     def _format_response(self, analysis: dict) -> str:
         reasoning = "\n".join(analysis.get('reasoning', []))
-        return f"""\n[Analysis]
-{reasoning}
+        decision = analysis.get('decision', 'No conclusion reached')
 
-[Decision]
-{analysis.get('decision', 'No conclusion reached')}"""
+        return (
+            f"\n[Analysis]\n"
+            f"{reasoning}\n\n"
+            f"[Decision]\n"
+            f"{decision}"
+        )
 
     def run(self):
         self.console.print(Panel("Ghost Interface - XR5T Core Online", style="bold cyan"))

@@ -1,16 +1,19 @@
 {
-    "decision_weights": {
-        "risk": 0.3,
-        "efficiency": 0.7,
-        "creativity": 0.5
+    "user_id": "kayode_olalere",
+    "decision_framework": {
+        "learning_strategy": {
+            "preferred_style": "structured spiral learning",
+            "resources": ["technical docs", "video tutorials", "hands-on projects"],
+            "pace": "sprint-based with reflection periods"
+        },
+        "problem_solving": {
+            "default_approach": "First principles thinking",
+            "fallback_strategy": "Seek analogous solutions from history"
+        }
     },
-    "reasoning_templates": [
-        "First analyze {X}, then consider {Y}",
-        "Compare with previous experience: {EXAMPLE}"
-    ],
-    "communication_style": {
-        "formality": 0.8,
-        "humor": 0.2,
-        "detail_level": 0.9
+    "communication_preferences": {
+        "tone": "professional yet approachable",
+        "detail_level": "concise with optional deep dives",
+        "preferred_formats": ["bullet points", "decision trees"]
     }
 }

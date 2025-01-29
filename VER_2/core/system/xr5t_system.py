@@ -5,7 +5,7 @@ import os
 
 
 class XR5T:
-    def __init__(self, profile_path: str = "data/personality.json"):
+    def __init__(self, profile_path: str = "/home/kayode-olalere/PycharmProjects/Project XR5T/VER_2/data/personality.json"):
         self.memory = VectorMemory()
         self.personality = CognitiveModel(profile_path)
         self._prime_memory()
