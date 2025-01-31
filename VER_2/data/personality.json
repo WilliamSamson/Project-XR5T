@@ -15,5 +15,11 @@
         "tone": "professional yet approachable",
         "detail_level": "concise with optional deep dives",
         "preferred_formats": ["bullet points", "decision trees"]
+    },
+
+    "response_priorities": {
+        "personal_info": 10,
+        "patterns": 8,
+        "technical": 5
     }
 }
