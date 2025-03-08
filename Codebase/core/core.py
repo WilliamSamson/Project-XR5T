@@ -112,29 +112,67 @@ class SelfOptimizationEngine:
                 epochs_since_improvement = 0  # Reset counter after adjustment
 
 # -------------------------------
-# 3. Synthetic Dataset Definition (Updated)
+# 3. Advanced Synthetic Dataset Definition
 # -------------------------------
-class SyntheticDataset(Dataset):
-    def __init__(self, num_samples=1000, input_size=10, output_size=2):
+
+class AdvancedSyntheticDataset(Dataset):
+    def __init__(self, num_samples=1000, input_size=10, output_size=2, noise_std=0.2, device="cpu"):
+        """
+        A synthetic dataset with multi-modal feature transformations.
+        - First half of input: Sinusoidal + Exponential components.
+        - Second half: Quadratic + Logarithmic componentas.
+        - Interaction terms: Multiplicative and cross-feature interactions.
+        - Noise: Gaussian perturbation for stochasticity.
+
+        Args:
+            num_samples (int): Number of samples.
+            input_size (int): Number of input features.
+            output_size (int): Dimensionality of target output.
+            noise_std (float): Standard deviation of noise.
+            device (str): Target device ('cpu' or 'cuda').
+        """
         self.num_samples = num_samples
         self.input_size = input_size
         self.output_size = output_size
+        self.noise_std = noise_std
+        self.device = device
 
-        # Create random input data
-        self.inputs = torch.randn(num_samples, input_size)
-        # Define weights and bias for a non-linear transformation.
-        self.weights = torch.randn(input_size, output_size)
-        self.bias = torch.randn(output_size)
-        # Non-linear relationship: using sine activation to generate outputs
-        linear_combination = self.inputs.mm(self.weights) + self.bias
-        # Increased noise and non-linearity make learning more challenging.
-        self.outputs = torch.sin(linear_combination) + 0.2 * torch.randn(num_samples, output_size)
+        # Ensure input size is valid
+        assert input_size >= 4, "Input size must be at least 4 for meaningful feature splits."
+
+        # Generate random input data
+        self.inputs = torch.randn(num_samples, input_size, device=device)
+
+        # Split inputs into two feature sets
+        half = input_size // 2
+        first_half, second_half = self.inputs[:, :half], self.inputs[:, half:]
+
+        # Apply transformations
+        sine_component = torch.sin(first_half) + torch.exp(-first_half)
+        quadratic_component = second_half ** 2 + torch.log1p(torch.abs(second_half))
+
+        # Feature aggregations
+        sine_feature = sine_component.mean(dim=1, keepdim=True)
+        quadratic_feature = quadratic_component.mean(dim=1, keepdim=True)
+
+        # Interaction terms
+        interaction_1 = sine_feature * quadratic_feature
+        interaction_2 = sine_feature ** 2 + quadratic_feature ** 2
+
+        # Construct final outputs
+        linear_output = torch.cat([sine_feature, quadratic_feature], dim=1)
+        interaction_term = 0.5 * interaction_1 + 0.3 * interaction_2
+
+        # Add controlled Gaussian noise
+        noise = torch.randn(num_samples, output_size, device=device) * noise_std
+        self.outputs = linear_output + interaction_term + noise
 
     def __len__(self):
         return self.num_samples
 
     def __getitem__(self, idx):
         return self.inputs[idx], self.outputs[idx]
+
 
 # -------------------------------
 # 4. Main Training Script
@@ -151,10 +189,10 @@ def main():
     num_epochs = 10
     batch_size = 32
 
-    # Instantiate the initial model (CognitiveCore), engine, and dataset
+    # Instantiate the initial model (CognitiveCore), engine, and advanced dataset.
     initial_model = CognitiveCore(input_size, hidden_size, output_size)
     engine = SelfOptimizationEngine(initial_model, input_size, hidden_size, output_size, learning_rate=learning_rate)
-    dataset = SyntheticDataset(num_samples=1000, input_size=input_size, output_size=output_size)
+    dataset = AdvancedSyntheticDataset(num_samples=1000, input_size=input_size, output_size=output_size)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     # Training Loop
