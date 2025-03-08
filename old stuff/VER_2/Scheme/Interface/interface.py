@@ -23,10 +23,10 @@ GHOST_BANNER = """
 """
 
 def display_banner():
-    console.print(GHOST_BANNER, style="bold cyan")
+    console.print(GHOST_BANNER, style="bold green")
 
 
-def simulate_typing_effect(text, style="green", delay=0.05):
+def simulate_typing_effect(text, style="orange", delay=0.05):
     for char in text:
         console.print(char, style=style, end="", flush=True)
         time.sleep(delay)

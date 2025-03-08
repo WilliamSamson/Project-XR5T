@@ -95,7 +95,7 @@ class CognitiveModel:
         return reasoning
 
     def _make_decision(self, query: str, patterns: list) -> str:
-        if "test" in query.lower() and patterns:
+        if "prediction_script" in query.lower() and patterns:
             return f"Based on your patterns:\n" + "\n".join(f"- {p}" for p in patterns)
 
         return f"""Recommended path:
