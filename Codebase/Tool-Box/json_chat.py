@@ -29,7 +29,7 @@ def extract_chat_data(url):
 share_url = "https://chatgpt.com/share/67c2e9fa-c198-8009-b7f3-adbdf4af9a73"
 chat_data = extract_chat_data(share_url)
 
-with open("chat_data.json", "w") as f:
+with open("chat_data_final.json", "w") as f:
     json.dump(chat_data, f, indent=4)
 
 print("Chat data saved as chat_data.json")
