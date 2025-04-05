@@ -1,0 +1,9 @@
+{
+    "valid_patterns": {
+        "x=0.664|y=0.457": {
+            "score": 1,
+            "hits": 1
+        }
+    },
+    "threshold": 0.145
+}
