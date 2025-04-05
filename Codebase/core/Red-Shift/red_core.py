@@ -32,6 +32,7 @@ class CognitiveCore(nn.Module):
         x = self.fc2(x)
         return x
 
+
 class DynamicCognitiveCore(nn.Module):
     def __init__(self, input_size, base_hidden_size, total_hidden_size, output_size, dropout_p=0.5):
         super(DynamicCognitiveCore, self).__init__()
@@ -49,9 +50,9 @@ class DynamicCognitiveCore(nn.Module):
         x = self.fc2(x)
         return x
 
+
 class SelfOptimizationEngine:
-    def __init__(self, model, input_size, base_hidden_size, output_size, learning_rate=0.0005, weight_decay=1e-4,
-                 max_extra_capacity=256):
+    def __init__(self, model, input_size, base_hidden_size, output_size, learning_rate=0.0005, weight_decay=1e-4, max_extra_capacity=256):
         self.model = model
         self.input_size = input_size
         self.base_hidden_size = base_hidden_size
@@ -215,6 +216,7 @@ class AdvancedSyntheticDataset(Dataset):
     def __getitem__(self, idx):
         return self.inputs[idx], self.outputs[idx]
 
+
 def main():
     torch.manual_seed(42)
     input_size = 10000
@@ -225,7 +227,6 @@ def main():
 
     initial_model = CognitiveCore(input_size, base_hidden_size, output_size)
     engine = SelfOptimizationEngine(initial_model, input_size, base_hidden_size, output_size)
-
     dataset = AdvancedSyntheticDataset(num_samples=1000, input_size=input_size, output_size=output_size)
     train_size = int(0.8 * len(dataset))
     train_set, val_set = random_split(dataset, [train_size, len(dataset) - train_size])
@@ -235,6 +236,7 @@ def main():
     print("🚀 Initiating Meta-Learning Self Optimization")
     engine.self_refine(num_epochs, train_loader, val_loader)
     print("✅ Completed Training")
+
 
 if __name__ == "__main__":
     main()
