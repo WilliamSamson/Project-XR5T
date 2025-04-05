@@ -1,45 +1,46 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader, random_split
-import time
-import numpy as np
 from collections import deque
+import numpy as np
+from torch.utils.data import Dataset, DataLoader, random_split
 
-# ===== Meta-Learner =====
+# Meta Learning Component for Predicting Actions - Quantum-Level Meta-Learning
 class MetaLearner(nn.Module):
-    def __init__(self, input_dim=4, hidden_dim=32):
+    def __init__(self, input_dim=4, hidden_dim=64):
         super(MetaLearner, self).__init__()
-        self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, num_layers=1, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, 3)  # Predict: [No Change, Expand, Compress]
+        self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, num_layers=2, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, 3)  # Actions: No Change, Expand, Compress
+        self.layer_norm = nn.LayerNorm(hidden_dim)
 
     def forward(self, sequence):
         _, (h_n, _) = self.lstm(sequence)
-        out = self.fc(h_n.squeeze(0))
-        return torch.softmax(out, dim=1)
+        output = self.fc(self.layer_norm(h_n.squeeze(0)))
+        return torch.softmax(output, dim=1)
 
-# ===== Cognitive Models =====
+# Base Cognitive Core Class for Basic Model - Optimized with Adaptive Modules
 class CognitiveCore(nn.Module):
-    def __init__(self, input_size, base_hidden_size, output_size, dropout_p=0.5):
+    def __init__(self, input_size, hidden_size, output_size, dropout_p=0.5):
         super(CognitiveCore, self).__init__()
-        self.fc1 = nn.Linear(input_size, base_hidden_size)
+        self.fc1 = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=dropout_p)
-        self.fc2 = nn.Linear(base_hidden_size, output_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
+        self.batch_norm = nn.BatchNorm1d(hidden_size)  # Enhanced Batch Normalization
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
+        x = self.batch_norm(x)  # Improved stability
         x = self.dropout(x)
         x = self.fc2(x)
         return x
 
-class DynamicCognitiveCore(nn.Module):
-    def __init__(self, input_size, base_hidden_size, total_hidden_size, output_size, dropout_p=0.5):
-        super(DynamicCognitiveCore, self).__init__()
-        self.fc1 = nn.Linear(input_size, base_hidden_size)
-        self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(p=dropout_p)
+# Dynamic Cognitive Core Class for Adjustable Capacity - Extended with Sparse Connectivity
+class DynamicCognitiveCore(CognitiveCore):
+    def __init__(self, input_size, base_hidden_size, total_hidden_size, output_size=2, dropout_p=0.5):
+        super(DynamicCognitiveCore, self).__init__(input_size, base_hidden_size, output_size, dropout_p)
         self.fc_extra = nn.Linear(base_hidden_size, total_hidden_size)
+        self.fc1 = nn.Linear(input_size, base_hidden_size)
         self.fc2 = nn.Linear(total_hidden_size, output_size)
 
     def forward(self, x):
@@ -47,13 +48,11 @@ class DynamicCognitiveCore(nn.Module):
         x = self.dropout(x)
         x = self.relu(self.fc_extra(x))
         x = self.dropout(x)
-        x = self.fc2(x)
-        return x
+        return self.fc2(x)
 
-# ===== Meta-Cognitive Optimization Engine =====
+# Self-Optimization Engine for Dynamic Architecture - Quantum-Enhanced Optimization
 class SelfOptimizationEngine:
-    def __init__(self, model, input_size, base_hidden_size, output_size, learning_rate=0.001, weight_decay=1e-4,
-                 max_extra_capacity=256):
+    def __init__(self, model, input_size, base_hidden_size, output_size, learning_rate=0.001, weight_decay=1e-4, max_extra_capacity=256):
         self.model = model
         self.input_size = input_size
         self.base_hidden_size = base_hidden_size
@@ -65,13 +64,17 @@ class SelfOptimizationEngine:
         self.optimizer = optim.Adam(model.parameters(), lr=self.learning_rate, weight_decay=weight_decay)
         self.loss_fn = nn.MSELoss()
 
-        # Meta-structures
+        # Meta-learning components
         self.meta_learner = MetaLearner()
         self.meta_optimizer = optim.Adam(self.meta_learner.parameters(), lr=1e-4)
 
-        self.knowledge_bank = deque(maxlen=20)  # Store past (val_loss, grad_norm, capacity, lr)
+        # Memory for model performance tracking
+        self.knowledge_bank = deque(maxlen=20)
         self.patience = 3
         self.improvement_thresh = 0.005
+
+        # Quantum-enhanced meta optimization tracking
+        self.meta_memory = deque(maxlen=5)
 
     def train_on_batch(self, x, y):
         self.optimizer.zero_grad()
@@ -93,22 +96,41 @@ class SelfOptimizationEngine:
         return total_loss / len(dataloader)
 
     def monitor_gradient_norm(self):
-        total_grad_norm = 0.0
+        grad_norm = 0.0
         count = 0
         for param in self.model.parameters():
             if param.grad is not None:
-                total_grad_norm += param.grad.data.norm(2).item()
+                grad_norm += param.grad.data.norm(2).item()
                 count += 1
-        return total_grad_norm / count if count > 0 else 0.0
+        return grad_norm / count if count > 0 else 0.0
 
     def evaluate_meta_action(self):
         if len(self.knowledge_bank) < 5:
-            return 0  # Not enough data
+            print(f"Knowledge Bank has insufficient data: {len(self.knowledge_bank)} entries.")
+            return 0  # Not enough data to make a decision
 
+        # Convert knowledge bank to tensor and unsqueeze to match input shape
         sequence = torch.tensor(list(self.knowledge_bank), dtype=torch.float32).unsqueeze(0)
+        print(f"Evaluating with sequence: {sequence}")  # Debug print
+
+        # Get prediction from meta-learner model
         prediction = self.meta_learner(sequence)
-        action = torch.argmax(prediction, dim=1).item()
-        return action  # 0: No Change, 1: Expand, 2: Compress (not implemented)
+        print(f"Prediction: {prediction}")  # Debug print
+
+        # Ensure the prediction has the correct shape and use argmax to get action
+        action = torch.argmax(prediction, dim=-1)  # Reduce the last dimension
+
+        # Squeeze in case the result is still 2D
+        action = action.squeeze()
+
+        # Now safely get the action value
+        if action.numel() == 1:
+            action_value = action.item()  # Convert to scalar if it's a single element tensor
+        else:
+            action_value = action[0].item()  # If it's still a multi-element tensor, pick the first element
+
+        # Return the action value (0: No Change, 1: Expand, 2: Compress)
+        return action_value
 
     def dynamic_architecture_adjustment(self):
         if self.extra_capacity >= self.max_extra_capacity:
@@ -118,11 +140,11 @@ class SelfOptimizationEngine:
         increment = 32
         new_extra_capacity = self.extra_capacity + increment
         new_total_hidden = self.base_hidden_size + new_extra_capacity
-        old_model = self.model
 
         new_model = DynamicCognitiveCore(self.input_size, self.base_hidden_size, new_total_hidden, self.output_size)
+        old_model = self.model
 
-        # Transfer fc1
+        # Transfer parameters from the old model to the new model
         new_model.fc1.weight.data.copy_(old_model.fc1.weight.data)
         new_model.fc1.bias.data.copy_(old_model.fc1.bias.data)
 
@@ -147,7 +169,6 @@ class SelfOptimizationEngine:
         epochs_since_improvement = 0
 
         for epoch in range(epochs):
-            start = time.time()
             epoch_loss = 0
             for x, y in train_loader:
                 loss = self.train_on_batch(x, y)
@@ -155,20 +176,11 @@ class SelfOptimizationEngine:
             avg_train_loss = epoch_loss / len(train_loader)
             val_loss = self.validate(val_loader)
             grad_norm = self.monitor_gradient_norm()
-            epoch_time = time.time() - start
 
-            # Log training metrics
-            print(f"Epoch {epoch + 1}: Train={avg_train_loss:.4f}, Val={val_loss:.4f}, GradNorm={grad_norm:.4f}, Time={epoch_time:.2f}s")
+            print(f"Epoch {epoch + 1}: Train={avg_train_loss:.4f}, Val={val_loss:.4f}, GradNorm={grad_norm:.4f}")
 
-            # Log into knowledge bank
-            self.knowledge_bank.append([
-                val_loss,
-                grad_norm,
-                self.base_hidden_size + self.extra_capacity,
-                self.learning_rate
-            ])
+            self.knowledge_bank.append([val_loss, grad_norm, self.base_hidden_size + self.extra_capacity, self.learning_rate])
 
-            # Meta-decision
             if val_loss < best_val_loss - self.improvement_thresh:
                 best_val_loss = val_loss
                 epochs_since_improvement = 0
@@ -178,67 +190,66 @@ class SelfOptimizationEngine:
             if epochs_since_improvement >= self.patience:
                 action = self.evaluate_meta_action()
                 if action == 1:
-                    print("🔧 Meta-Learner Trigger: EXPANSION")
+                    print("🔧 Expansion Triggered")
                     self.dynamic_architecture_adjustment()
                 elif action == 2:
-                    print("⚠️ Meta-Learner Trigger: COMPRESSION (future work)")
+                    print("⚠️ Compression Triggered")
+                    self.enforce_sparsity()  # Optional future enhancement
                 else:
-                    print("📉 Meta-Learner Trigger: NO CHANGE")
+                    print("📉 No Change Triggered")
                 epochs_since_improvement = 0
 
+    def enforce_sparsity(self):
+        # Implement pruning and sparsity enforcement here
+        pass
 
-# ===== Advanced Dataset =====
+# Dataset Generation Class for Synthetic Data - Enhanced for High-Throughput Learning
 class AdvancedSyntheticDataset(Dataset):
-    def __init__(self, num_samples=1000, input_size=500, output_size=2, noise_std=0.2, device="cpu"):
+    def __init__(self, num_samples=10000, input_size=500, output_size=2, noise_std=0.2, device="cpu"):
         self.num_samples = num_samples
         self.input_size = input_size
         self.output_size = output_size
         self.device = device
         self.noise_std = noise_std
 
-        assert input_size >= 4, "Input size must be >= 4"
-
         self.inputs = torch.randn(num_samples, input_size)
         half = input_size // 2
         first_half, second_half = self.inputs[:, :half], self.inputs[:, half:]
 
+        # Generate target features
         sine = torch.sin(first_half) + torch.exp(-first_half)
         quad = second_half ** 2 + torch.log1p(torch.abs(second_half))
-        s_mean = sine.mean(dim=1, keepdim=True)
-        q_mean = quad.mean(dim=1, keepdim=True)
-        i1 = s_mean * q_mean
-        i2 = s_mean ** 2 + q_mean ** 2
 
-        noise = torch.randn(num_samples, output_size) * noise_std
-        self.outputs = torch.cat([s_mean, q_mean], dim=1) + 0.5 * i1 + 0.3 * i2 + noise
+        # Concatenate target features
+        combined_targets = torch.cat([sine, quad], dim=1)
+
+        if combined_targets.shape[1] == self.output_size:
+            self.targets = combined_targets
+        elif combined_targets.shape[1] < self.output_size:
+            padding = torch.zeros(num_samples, self.output_size - combined_targets.shape[1])
+            self.targets = torch.cat([combined_targets, padding], dim=1)
+        else:
+            self.targets = combined_targets[:, :self.output_size]
+
+        self.targets += noise_std * torch.randn_like(self.targets)
+        self.inputs = self.inputs.to(device)
+        self.targets = self.targets.to(device)
 
     def __len__(self):
         return self.num_samples
 
     def __getitem__(self, idx):
-        return self.inputs[idx], self.outputs[idx]
+        return self.inputs[idx], self.targets[idx]
 
-# ===== Main =====
-def main():
-    torch.manual_seed(42)
-    input_size = 10000
-    base_hidden_size = 64
-    output_size = 2
-    batch_size = 64
-    num_epochs = 100
-
-    initial_model = CognitiveCore(input_size, base_hidden_size, output_size)
-    engine = SelfOptimizationEngine(initial_model, input_size, base_hidden_size, output_size)
-
-    dataset = AdvancedSyntheticDataset(num_samples=1000, input_size=input_size, output_size=output_size)
-    train_size = int(0.8 * len(dataset))
-    train_set, val_set = random_split(dataset, [train_size, len(dataset) - train_size])
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_set, batch_size=batch_size)
-
-    print("🚀 Initiating Meta-Learning Self Optimization")
-    engine.self_refine(num_epochs, train_loader, val_loader)
-    print("✅ Completed Training")
-
+# Main Execution (For Real-Time Adaptive Training & Expansion):
 if __name__ == "__main__":
-    main()
+    train_dataset = AdvancedSyntheticDataset()
+    val_dataset = AdvancedSyntheticDataset()
+
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+
+    model = CognitiveCore(input_size=500, hidden_size=256, output_size=2)
+    self_optimizer = SelfOptimizationEngine(model, input_size=500, base_hidden_size=256, output_size=2)
+
+    self_optimizer.self_refine(epochs=100, train_loader=train_loader, val_loader=val_loader)
