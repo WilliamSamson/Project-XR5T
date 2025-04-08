@@ -9,6 +9,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../Aether'))  # Add the Aether directory to the path
 from Aether_v1 import Aether  # Import directly from Aether_v1.py
 
+
 class MetaLearner(nn.Module):
     def __init__(self, input_dim=4, hidden_dim=32):
         super(MetaLearner, self).__init__()
@@ -54,10 +55,6 @@ class DynamicCognitiveCore(nn.Module):
         return x
 
     def prune(self, prune_percentage=0.2):
-        """
-        Prune neurons with the smallest gradients.
-        Prune percentage determines the percentage of neurons to prune.
-        """
         with torch.no_grad():
             for param in self.parameters():
                 if len(param.shape) == 2:  # Only consider weight parameters
@@ -122,17 +119,8 @@ class SelfOptimizationEngineWithAether:
         if len(self.knowledge_bank) < 5:
             return 0  # Not enough data
 
-        # Extract relevant data from the knowledge bank
         current_state = torch.tensor(list(self.knowledge_bank), dtype=torch.float32)
-
-        # If current_state is a dictionary, we extract its values
-        if isinstance(current_state, dict):
-            current_state = list(current_state.values())  # Extract the values
-
-        # Now you can safely create a tensor from the extracted values
-        sequence = torch.tensor(current_state, dtype=torch.float32).unsqueeze(0)
-
-        # Pass to Meta-Learner for prediction
+        sequence = current_state.unsqueeze(0)
         prediction = self.meta_learner(sequence)
         action = torch.argmax(prediction, dim=1).item()
         return action  # 0: No Change, 1: Expand, 2: Compress, 3: Prune
@@ -149,7 +137,7 @@ class SelfOptimizationEngineWithAether:
 
         new_model = DynamicCognitiveCore(self.input_size, self.base_hidden_size, new_total_hidden, self.output_size)
 
-        # Transfer fc1
+        # Transfer weights from old model to new model
         new_model.fc1.weight.data.copy_(old_model.fc1.weight.data)
         new_model.fc1.bias.data.copy_(old_model.fc1.bias.data)
 
@@ -187,7 +175,6 @@ class SelfOptimizationEngineWithAether:
             # Log training metrics
             print(f"Epoch {epoch + 1}: Train={avg_train_loss:.4f}, Val={val_loss:.4f}, GradNorm={grad_norm:.4f}, Time={epoch_time:.2f}s")
 
-            # Log into knowledge bank
             self.knowledge_bank.append([
                 val_loss,
                 grad_norm,
@@ -195,7 +182,6 @@ class SelfOptimizationEngineWithAether:
                 self.learning_rate
             ])
 
-            # Meta-decision via Aether's feedback
             if val_loss < best_val_loss - self.improvement_thresh:
                 best_val_loss = val_loss
                 epochs_since_improvement = 0
@@ -203,15 +189,13 @@ class SelfOptimizationEngineWithAether:
                 epochs_since_improvement += 1
 
             if epochs_since_improvement >= self.patience:
-                action = self.evaluate_meta_action()  # Evaluate action using Aether
+                action = self.evaluate_meta_action()
                 if action == 1:
                     print("🔧 Meta-Learner Trigger: EXPANSION")
                     self.dynamic_architecture_adjustment()
-                elif action == 2:
-                    print("⚠️ Meta-Learner Trigger: COMPRESSION (future work)")
                 elif action == 3:
                     print("🧹 Meta-Learner Trigger: PRUNING")
-                    self.model.prune(prune_percentage=0.2)  # Prune neurons
+                    self.model.prune(prune_percentage=0.2)
                 else:
                     print("📉 Meta-Learner Trigger: NO CHANGE")
                 epochs_since_improvement = 0
@@ -248,13 +232,8 @@ class AdvancedSyntheticDataset(Dataset):
         return self.inputs[idx], self.outputs[idx]
 
 
-def main():
+def main(input_size=10000, base_hidden_size=64, output_size=2, batch_size=64, num_epochs=100, learning_rate=0.0005):
     torch.manual_seed(42)
-    input_size = 10000
-    base_hidden_size = 64
-    output_size = 2
-    batch_size = 64
-    num_epochs = 100
 
     initial_model = CognitiveCore(input_size, base_hidden_size, output_size)
 
@@ -266,6 +245,7 @@ def main():
         input_size=input_size,
         base_hidden_size=base_hidden_size,
         output_size=output_size,
+        learning_rate=learning_rate,
         aether=aether_instance
     )
 
@@ -281,4 +261,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(input_size=10000, base_hidden_size=64, output_size=2, batch_size=64, num_epochs=100, learning_rate=0.0005)
